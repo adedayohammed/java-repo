@@ -1,30 +1,24 @@
-# 1. Base image (Java runtime environment)
 FROM eclipse-temurin:17-jdk-alpine
 
-# 2. Set working directory inside container
 WORKDIR /app
 
-# 3. Copy Maven wrapper (optional but recommended)
-COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
+# Copy gradle wrapper
+COPY gradlew .
+COPY gradle gradle
+COPY build.gradle .
+COPY settings.gradle .
 
-# 4. Give permission to Maven wrapper
-RUN chmod +x mvnw
+# Make wrapper executable
+RUN chmod +x gradlew
 
-# 5. Download dependencies (cached layer optimization)
-RUN ./mvnw dependency:go-offline
+# Download dependencies
+RUN ./gradlew dependencies
 
-# 6. Copy application source code
+# Copy source code
 COPY src ./src
 
-# 7. Build the application (skip tests for faster build)
-RUN ./mvnw clean package -DskipTests
+# Build project
+RUN ./gradlew build -x test
 
-# 8. Rename jar for simplicity (optional but clean)
-RUN cp target/*.jar app.jar
-
-# 9. Expose application port
-EXPOSE 8080
-
-# 10. Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Run jar
+CMD ["java", "-jar", "build/libs/demo-0.0.1-SNAPSHOT.jar"]
